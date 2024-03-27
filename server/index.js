@@ -1,13 +1,14 @@
 const express = require('express');
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt');
+const bodyParser = require('body-parser')
 
 
 
 
 
 const {connection} = require("./config/db");
-const {Usermodel} = require("./models/User.model")
+const {Usermodel} = require("./models/User.model");
 
 const app = express();
 app.use(express.json());
@@ -16,33 +17,33 @@ app.get("/",(req,res)=>{
     res.send("hello")
 })
 
-app.post("/signin", async(req,res)=>{
-    const {username , password } = req.body;
-    if(!username || !password){
-        res.send({msg:"Invalid details"});
-    }
 
-    try {
 
-        const user = await Usermodel.find({username});
-        if(!user){
-            res.send({msg:"Invalid details"});
-            return;
-        }
-        // const isMatch = await bcrypt.compare(password , user.password);
-        // if(!isMatch){
-        //     res.send({msg:"Invalid details"});
-        //     return;
-        // }
-        res.send({msg:"Login successful"})
-        
-    } catch (error) {
-        console.log(error);
-        res.send({msg:"Error in signin"})
-    }
-
+app.post("/signin", async (req, res) => {
+    const { username, password } = req.body;
   
-})
+    try {
+      if (!username || !password) {
+        return res.status(400).json({ message: "Please fill all the fields" });
+      }
+  
+      // Check if the user already exists
+      const existingUser = await Usermodel.findOne({ username });
+  
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists with this email" });
+      }
+  
+      // Create a new user
+      const user = new Usermodel({ username, password });
+      const savedUser = await user.save();
+  
+      res.json(savedUser);
+    } catch (error) {
+      console.error('Error registering user:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
 
 
 
